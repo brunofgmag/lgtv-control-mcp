@@ -119,7 +119,7 @@ tool("show_toast", "Display a toast notification message on the TV.", { message:
 
 tool(
   "send_button",
-  "Send a remote-control button press. Common names: UP, DOWN, LEFT, RIGHT, ENTER, BACK, EXIT, HOME, MENU, INFO, MUTE, VOLUMEUP, VOLUMEDOWN, CHANNELUP, CHANNELDOWN, PLAY, PAUSE, STOP, REWIND, FASTFORWARD, RED, GREEN, YELLOW, BLUE, 0-9, DASH.",
+  "Send a remote-control button press. Common names: 0-9, HOME, BACK, ENTER, EXIT, UP, DOWN, LEFT, RIGHT, MENU, MUTE, VOLUMEUP, VOLUMEDOWN, CHANNELUP, CHANNELDOWN, PLAY, PAUSE, STOP, REWIND, FASTFORWARD, RED, GREEN, YELLOW, BLUE, DASH, GUIDE, NETFLIX, AMAZON.",
   { button: z.string() },
   (lg, { button }) => lg.sendButton(button)
 );

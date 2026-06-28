@@ -14,8 +14,9 @@ Communication uses the webOS **SSAP** protocol over WebSocket, the same one used
 - `channel_up` / `channel_down` / `set_channel` / `list_channels` / `get_current_channel`
 - `media_play` / `media_pause` / `media_stop` / `media_rewind` / `media_fast_forward`
 - `power_off` / `screen_off` / `screen_on` / `get_power_state`
+- `set_3d_on` / `set_3d_off`
 - `show_toast`: display a notification on the TV
-- `send_button`: press any remote button (UP, DOWN, ENTER, BACK, HOME, etc.)
+- `send_button`: press a remote button. Compatible names include `0`-`9`, `HOME`, `BACK`, `ENTER`, `EXIT`, `UP`, `DOWN`, `LEFT`, `RIGHT`, `RED`, `GREEN`, `YELLOW`, `BLUE`, `POWER`, `VOLUMEUP`, `VOLUMEDOWN`, `MUTE`, `MENU`, `CC`, `DASH`, `CHANNELUP`, `CHANNELDOWN`, `LIST`, `AD`, `SAP`, `PROGRAM`, `PLAY`, `PAUSE`, `STOP`, `REWIND`, `FASTFORWARD`, `GUIDE`, `AMAZON`, `NETFLIX`, `MAGNIFIER_ZOOM`, `LIVE_ZOOM`, `3D_MODE`, `ASPECT_RATIO`, `RECENT`, `RECORD`, `SCREEN_REMOTE`, `MYAPPS`
 - `get_system_info` / `get_software_info` / `get_service_list`
 - `ssap_request`: send any raw SSAP command (escape hatch)
 
@@ -28,21 +29,21 @@ Communication uses the webOS **SSAP** protocol over WebSocket, the same one used
 
 ## Installation
 
-### Recommended: npx
-
-```bash
-npx -y lgtv-control-mcp@latest
-```
-
 ### Global install
-
-If you prefer a command available anywhere on your system:
 
 ```bash
 npm install -g lgtv-control-mcp
 ```
 
-Then use `command: "lgtv-control-mcp"` with no `args`.
+This puts the `lgtv-control-mcp` binary in your PATH. Use `command: "lgtv-control-mcp"` with no `args` in your client config.
+
+### Via npx (no install)
+
+```bash
+npx -y lgtv-control-mcp@latest
+```
+
+This does not install the package. The MCP client runs this command each time it starts the server; npm caches the package after the first download.
 
 ### From source
 
@@ -64,15 +65,35 @@ The client key is saved automatically to `~/.lgtv-control-mcp/keys.json` and reu
 
 Set the TV's IP using the `LGTV_HOST` environment variable in your client config.
 
+### Claude Desktop
+
+Open **Settings → Developer → Edit Config**. This opens `claude_desktop_config.json` directly in your editor. Add the entry and restart the app.
+
+```json
+{
+  "mcpServers": {
+    "lgtv-control": {
+      "command": "npx",
+      "args": ["-y", "lgtv-control-mcp@latest"],
+      "env": { "LGTV_HOST": "192.168.1.50" }
+    }
+  }
+}
+```
+
+If you installed globally, use `"command": "lgtv-control-mcp"` with `"args": []`.
+
 ### Claude Code
 
-Via CLI:
+The `--scope user` flag adds the server globally across all your projects:
 
 ```bash
 claude mcp add lgtv-control --scope user --env LGTV_HOST=192.168.1.50 -- npx -y lgtv-control-mcp@latest
 ```
 
-Or in `.mcp.json`:
+If you installed globally, replace `npx -y lgtv-control-mcp@latest` with just `lgtv-control-mcp`.
+
+Or add it manually to `~/.claude/settings.json` (user-level, global):
 
 ```json
 {

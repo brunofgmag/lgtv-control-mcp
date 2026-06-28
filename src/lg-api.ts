@@ -113,11 +113,11 @@ export class LgApi {
   }
 
   rewind(): Promise<unknown> {
-    return this.client.request("ssap://media.controls/rewind");
+    return this.sendButton("REWIND");
   }
 
   fastForward(): Promise<unknown> {
-    return this.client.request("ssap://media.controls/fastForward");
+    return this.sendButton("FASTFORWARD");
   }
 
   powerOff(): Promise<unknown> {
