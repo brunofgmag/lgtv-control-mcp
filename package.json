@@ -1,10 +1,11 @@
 {
-  "name": "lg-control-mcp",
+  "name": "lgtv-control-mcp",
   "version": "1.0.0",
-  "description": "MCP server to control LG webOS TVs (backlight, volume, inputs, apps, power, remote keys) from AI chat clients such as Claude Code, Codex CLI and GitHub Copilot CLI.",
+  "description": "MCP server to control LG webOS TVs from AI clients.",
   "type": "module",
+  "main": "dist/index.js",
   "bin": {
-    "lg-control-mcp": "dist/index.js"
+    "lgtv-control-mcp": "dist/index.js"
   },
   "files": [
     "dist",
@@ -34,8 +35,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SEU_USUARIO/lg-control-mcp.git"
+    "url": "git+https://github.com/brunofgmag/lgtv-control-mcp.git"
   },
+  "bugs": {
+    "url": "https://github.com/brunofgmag/lgtv-control-mcp/issues"
+  },
+  "homepage": "https://github.com/brunofgmag/lgtv-control-mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "ws": "^8.18.0",

@@ -3,3 +3,14 @@ dist/
 *.log
 .env
 .DS_Store
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# AI tools
+.claude/
+.cursor/
+.aider*
+.copilot/

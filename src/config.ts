@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 
-const CONFIG_DIR = join(homedir(), ".lg-control-mcp");
+const CONFIG_DIR = join(homedir(), ".lgtv-control-mcp");
 const KEYS_FILE = join(CONFIG_DIR, "keys.json");
 
 export interface TvConfig {

@@ -1,87 +1,85 @@
-# lg-control-mcp
+# lgtv-control-mcp
 
-Servidor [MCP (Model Context Protocol)](https://modelcontextprotocol.io) para controlar TVs **LG webOS** a partir de clientes de IA como **Claude Code**, **Codex CLI** e **GitHub Copilot CLI**.
+An [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server for controlling **LG webOS TVs** from AI clients like **Claude**, **Codex**, **GitHub Copilot**, and **Antigravity**.
 
-A função principal é ajustar o **backlight** (brilho do painel, 0–100), mas o servidor expõe praticamente todas as funções controláveis da TV: volume, mudo, entradas (HDMI), apps, canais, mídia, energia, tela, botões do controle remoto e um modo "raw" para qualquer comando SSAP.
+Communication uses the webOS **SSAP** protocol over WebSocket, the same one used by the LG ThinQ app and projects like ColorControl.
 
-A comunicação usa o protocolo **SSAP** (WebSocket) da webOS — o mesmo usado pelo app LG ThinQ / Magic Remote e por projetos como ColorControl. O ajuste de imagem usa o mecanismo *luna* via `setSystemSettings`, com fallback automático.
+## Tools
 
-## Recursos
-
-- `set_backlight` — backlight 0–100 (controle principal de brilho)
-- `set_picture_setting` / `set_picture_mode` / `get_picture_settings` — contraste, brilho, cor e modo de imagem
+- `set_backlight`: backlight 0-100
+- `set_picture_setting` / `set_picture_mode` / `get_picture_settings`: contrast, brightness, color, and picture mode
 - `set_volume` / `volume_up` / `volume_down` / `get_volume` / `set_mute`
-- `list_inputs` / `set_input` — alternar HDMI e demais entradas
+- `list_inputs` / `set_input`: switch HDMI and other inputs
 - `list_apps` / `launch_app` / `close_app` / `get_foreground_app`
 - `channel_up` / `channel_down` / `set_channel` / `list_channels` / `get_current_channel`
 - `media_play` / `media_pause` / `media_stop` / `media_rewind` / `media_fast_forward`
 - `power_off` / `screen_off` / `screen_on` / `get_power_state`
-- `show_toast` — exibe uma notificação na TV
-- `send_button` — pressiona qualquer botão do controle (UP, DOWN, ENTER, BACK, HOME, etc.)
+- `show_toast`: display a notification on the TV
+- `send_button`: press any remote button (UP, DOWN, ENTER, BACK, HOME, etc.)
 - `get_system_info` / `get_software_info` / `get_service_list`
-- `ssap_request` — envia qualquer comando SSAP cru (escape hatch)
+- `ssap_request`: send any raw SSAP command (escape hatch)
 
-## Pré-requisitos
+## Requirements
 
 - **Node.js 18+**
-- A TV LG (webOS) ligada e na mesma rede local
-- O **endereço IP** da TV (Configurações → Rede)
-- Em **Configurações → Conexão → Gerenciamento de dispositivos móveis TV On**, mantenha o controle por rede habilitado
+- An LG webOS TV powered on and on the same local network
+- The TV's **IP address** (Settings > Network)
+- Mobile TV On enabled (Settings > Connection > External Devices > On via Wi-Fi)
 
-## Instalação
+## Installation
 
-### Opção A — local (recomendada durante o desenvolvimento)
+### Recommended: npx
 
 ```bash
-git clone https://github.com/SEU_USUARIO/lg-control-mcp.git
-cd lg-control-mcp
+npx -y lgtv-control-mcp@latest
+```
+
+### Global install
+
+If you prefer a command available anywhere on your system:
+
+```bash
+npm install -g lgtv-control-mcp
+```
+
+Then use `command: "lgtv-control-mcp"` with no `args`.
+
+### From source
+
+```bash
+git clone https://github.com/brunofgmag/lgtv-control-mcp.git
+cd lgtv-control-mcp
 npm install
+npm run build
+node dist/index.js
 ```
 
-O `npm install` já compila o projeto (gera `dist/`). O executável fica em `dist/index.js`.
+## Pairing
 
-### Opção B — direto do GitHub (sem clonar)
+The first time you connect, the TV shows a **"Connection Request"** prompt on screen. Accept it with the remote.
 
-Depois de publicar o repositório, qualquer cliente MCP pode rodar o servidor com:
+The client key is saved automatically to `~/.lgtv-control-mcp/keys.json` and reused on later connections. You don't need to configure it manually. If you want to pin a specific key, copy the value from that file into `LGTV_CLIENT_KEY`.
 
-```bash
-npx -y github:SEU_USUARIO/lg-control-mcp
-```
+## Client configuration
 
-> Troque `SEU_USUARIO` pelo seu usuário do GitHub.
-
-## Pareamento (primeira execução)
-
-Na primeira conexão a TV mostra um aviso **"Solicitação de conexão"** na tela — aceite com o controle.
-A *client-key* gerada é salva automaticamente em `~/.lg-control-mcp/keys.json` e reutilizada nas próximas vezes, sem novo aviso.
-
-Você não precisa configurar a chave manualmente. Se quiser fixá-la, copie o valor do arquivo acima para a variável `LGTV_CLIENT_KEY`.
-
-## Configuração nos clientes
-
-Em todos os casos, informe o IP da TV pela variável de ambiente `LGTV_HOST`.
-
-Use **um** dos formatos de `command`:
-
-- Local: `command: "node"`, `args: ["C:\\Users\\bruno\\Projetos\\lg-control-mcp\\dist\\index.js"]`
-- GitHub: `command: "npx"`, `args: ["-y", "github:SEU_USUARIO/lg-control-mcp"]`
+Set the TV's IP using the `LGTV_HOST` environment variable in your client config.
 
 ### Claude Code
 
 Via CLI:
 
 ```bash
-claude mcp add lg-control --env LGTV_HOST=192.168.1.50 -- node C:\Users\bruno\Projetos\lg-control-mcp\dist\index.js
+claude mcp add lgtv-control --scope user --env LGTV_HOST=192.168.1.50 -- npx -y lgtv-control-mcp@latest
 ```
 
-Ou no `.mcp.json` (do projeto) / configuração de usuário:
+Or in `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
-    "lg-control": {
-      "command": "node",
-      "args": ["C:\\Users\\bruno\\Projetos\\lg-control-mcp\\dist\\index.js"],
+    "lgtv-control": {
+      "command": "npx",
+      "args": ["-y", "lgtv-control-mcp@latest"],
       "env": { "LGTV_HOST": "192.168.1.50" }
     }
   }
@@ -90,26 +88,49 @@ Ou no `.mcp.json` (do projeto) / configuração de usuário:
 
 ### Codex CLI
 
-No arquivo `~/.codex/config.toml`:
+Via CLI:
 
-```toml
-[mcp_servers.lg-control]
-command = "node"
-args = ["C:\\Users\\bruno\\Projetos\\lg-control-mcp\\dist\\index.js"]
-env = { LGTV_HOST = "192.168.1.50" }
+```bash
+codex mcp add lgtv-control --env LGTV_HOST=192.168.1.50 -- npx -y lgtv-control-mcp@latest
 ```
 
-### GitHub Copilot CLI
+Or in `~/.codex/config.toml`:
 
-No arquivo de configuração MCP do Copilot CLI (`~/.copilot/mcp-config.json`) ou via o comando `/mcp add`:
+```toml
+[mcp_servers."lgtv-control"]
+command = "npx"
+args = ["-y", "lgtv-control-mcp@latest"]
+
+[mcp_servers."lgtv-control".env]
+LGTV_HOST = "192.168.1.50"
+```
+
+### GitHub Copilot / VS Code
+
+In `.vscode/mcp.json` or your user MCP settings:
+
+```json
+{
+  "servers": {
+    "lgtv-control": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "lgtv-control-mcp@latest"],
+      "env": { "LGTV_HOST": "192.168.1.50" }
+    }
+  }
+}
+```
+
+For Copilot clients that expect the `mcpServers` format:
 
 ```json
 {
   "mcpServers": {
-    "lg-control": {
+    "lgtv-control": {
       "type": "local",
-      "command": "node",
-      "args": ["C:\\Users\\bruno\\Projetos\\lg-control-mcp\\dist\\index.js"],
+      "command": "npx",
+      "args": ["-y", "lgtv-control-mcp@latest"],
       "env": { "LGTV_HOST": "192.168.1.50" },
       "tools": ["*"]
     }
@@ -117,55 +138,64 @@ No arquivo de configuração MCP do Copilot CLI (`~/.copilot/mcp-config.json`) o
 }
 ```
 
-## Variáveis de ambiente
+### Antigravity
 
-| Variável | Obrigatória | Padrão | Descrição |
+```json
+{
+  "mcpServers": {
+    "lgtv-control": {
+      "command": "npx",
+      "args": ["-y", "lgtv-control-mcp@latest"],
+      "env": { "LGTV_HOST": "192.168.1.50" }
+    }
+  }
+}
+```
+
+### Other MCP clients
+
+Most clients that support local MCP via `stdio` use the same pattern:
+
+```json
+{
+  "mcpServers": {
+    "lgtv-control": {
+      "command": "npx",
+      "args": ["-y", "lgtv-control-mcp@latest"],
+      "env": { "LGTV_HOST": "192.168.1.50" }
+    }
+  }
+}
+```
+
+## Environment variables
+
+| Variable | Required | Default | Description |
 | --- | --- | --- | --- |
-| `LGTV_HOST` | sim | — | IP da TV na rede local |
-| `LGTV_PORT` | não | `3001` | `3001` = wss (TLS auto-assinado); use `3000` para ws sem TLS |
-| `LGTV_CLIENT_KEY` | não | — | Chave de pareamento; obtida e salva automaticamente no primeiro uso |
+| `LGTV_HOST` | yes | - | TV IP address on the local network |
+| `LGTV_PORT` | no | `3001` | `3001` = wss (self-signed TLS); use `3000` for plain ws |
+| `LGTV_CLIENT_KEY` | no | - | Pairing key; obtained and saved automatically on first use |
 
-## Como pedir à IA
+## Usage examples
 
-Exemplos de comandos em linguagem natural depois de configurar:
+Once configured, try asking your AI:
 
-- "Coloque o backlight da TV em 30"
-- "Aumenta o volume" / "Muda para o HDMI 2"
-- "Abre a Netflix" / "Desliga a tela da TV"
-- "Mostra um aviso 'Jantar pronto' na TV"
+- "Set the TV backlight to 30"
+- "Turn up the volume" / "Switch to HDMI 2"
+- "Open Netflix" / "Turn off the TV screen"
+- "Show a 'Dinner's ready' notification on the TV"
 
-## Publicação no GitHub
+## Troubleshooting
 
-> O CLI `gh` não está instalado nesta máquina. Use **uma** das opções abaixo.
+- **"pairing timed out"**: accept the connection prompt on the TV screen and try again.
+- **"could not connect"**: check the IP, that the TV is on and on the same network. Try `LGTV_PORT=3000`.
+- **Backlight not changing**: some firmware versions require the luna path. The server already tries SSAP first and falls back automatically. Also check that your current picture mode allows manual backlight adjustment.
+- **Re-pairing**: delete the TV's entry in `~/.lgtv-control-mcp/keys.json` to force a new pairing prompt.
 
-**Com GitHub CLI** (instale com `winget install --id GitHub.cli`, depois `gh auth login`):
+## How it works
 
-```bash
-cd C:\Users\bruno\Projetos\lg-control-mcp
-gh repo create lg-control-mcp --public --source=. --remote=origin --push
-```
+The server opens an SSAP WebSocket with the TV, performs the registration handshake (with `pairingType: PROMPT`), and sends `ssap://...` requests. Remote control buttons use a separate pointer socket (`getPointerInputSocket`). Picture adjustments use `setSystemSettings`; when the direct SSAP path is rejected by the firmware, the server uses the luna trick (creating and closing an alert whose `onclose` points to `luna://com.webos.settingsservice/setSystemSettings`).
 
-**Manualmente** (crie o repositório vazio em github.com/new, sem README):
-
-```bash
-cd C:\Users\bruno\Projetos\lg-control-mcp
-git remote add origin https://github.com/SEU_USUARIO/lg-control-mcp.git
-git push -u origin main
-```
-
-Depois de publicar, atualize a URL em `package.json` (`repository.url`) e substitua `SEU_USUARIO` neste README.
-
-## Solução de problemas
-
-- **"pairing timed out"**: aceite o aviso de conexão na tela da TV e repita a ação.
-- **"could not connect"**: confira o IP, se a TV está ligada e na mesma rede. Tente `LGTV_PORT=3000`.
-- **Backlight não muda**: alguns firmwares exigem o caminho *luna* — o servidor já tenta SSAP e cai para luna automaticamente. Verifique se o modo de imagem atual permite ajuste manual de backlight.
-- **Repareamento**: apague a entrada da TV em `~/.lg-control-mcp/keys.json` para forçar um novo pareamento.
-
-## Como funciona
-
-O servidor abre um WebSocket SSAP com a TV, faz o *handshake* de registro (com `pairingType: PROMPT`) e envia requisições `ssap://...`. Botões do controle usam um socket de ponteiro separado (`getPointerInputSocket`). Ajustes de imagem usam `setSystemSettings`; quando o caminho SSAP direto é recusado pelo firmware, o servidor usa o truque *luna* (criar e fechar um alerta cujo `onclose` aponta para `luna://com.webos.settingsservice/setSystemSettings`).
-
-## Licença
+## License
 
 [MIT](LICENSE)

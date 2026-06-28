@@ -19,7 +19,7 @@ async function ensureApi(): Promise<LgApi> {
   const result = await connection.connect(key);
   if (result.clientKey && result.clientKey !== key) {
     await storeKey(cfg.host, result.clientKey);
-    console.error(`[lg-control-mcp] paired with ${cfg.host}; client key saved to ~/.lg-control-mcp/keys.json`);
+    console.error(`[lgtv-control-mcp] paired with ${cfg.host}; client key saved to ~/.lgtv-control-mcp/keys.json`);
   }
   client = connection;
   api = new LgApi(connection);
@@ -36,7 +36,7 @@ function fail(err: unknown) {
   return { content: [{ type: "text" as const, text: `Error: ${message}` }], isError: true };
 }
 
-const server = new McpServer({ name: "lg-control-mcp", version: "1.0.0" });
+const server = new McpServer({ name: "lgtv-control-mcp", version: "1.0.0" });
 
 function tool(
   name: string,
@@ -141,7 +141,7 @@ tool(
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("[lg-control-mcp] server running on stdio");
+  console.error("[lgtv-control-mcp] server running on stdio");
 }
 
 main().catch((err) => {
