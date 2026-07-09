@@ -1,12 +1,14 @@
 # lgtv-control-mcp
 
-An [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server for controlling **LG webOS TVs** from AI clients like **Claude**, **Codex**, **GitHub Copilot**, and **Antigravity**.
+An [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server for controlling **LG webOS TVs** from AI clients like **Claude**, **Codex**, **GitHub Copilot**, and **Antigravity**. Works with one TV or several: register each TV under a name like "Office" and target it directly, or let commands fall through to a default TV.
 
 Communication uses the webOS **SSAP** protocol over WebSocket, the same one used by the LG ThinQ app and projects like ColorControl.
 
 ## Tools
 
+- `add_tv` / `remove_tv` / `list_tvs` / `set_default_tv`: manage your TVs by name (see [Multiple TVs](#multiple-tvs))
 - `set_backlight`: backlight 0-100
+- `set_peak_brightness`: peak brightness `off` / `low` / `medium` / `high`
 - `set_picture_setting` / `set_picture_mode` / `get_picture_settings`: contrast, brightness, color, and picture mode
 - `set_volume` / `volume_up` / `volume_down` / `get_volume` / `set_mute`
 - `list_inputs` / `set_input`: switch HDMI and other inputs
@@ -19,6 +21,8 @@ Communication uses the webOS **SSAP** protocol over WebSocket, the same one used
 - `send_button`: press a remote button. Compatible names include `0`-`9`, `HOME`, `BACK`, `ENTER`, `EXIT`, `UP`, `DOWN`, `LEFT`, `RIGHT`, `RED`, `GREEN`, `YELLOW`, `BLUE`, `POWER`, `VOLUMEUP`, `VOLUMEDOWN`, `MUTE`, `MENU`, `CC`, `DASH`, `CHANNELUP`, `CHANNELDOWN`, `LIST`, `AD`, `SAP`, `PROGRAM`, `PLAY`, `PAUSE`, `STOP`, `REWIND`, `FASTFORWARD`, `GUIDE`, `AMAZON`, `NETFLIX`, `MAGNIFIER_ZOOM`, `LIVE_ZOOM`, `3D_MODE`, `ASPECT_RATIO`, `RECENT`, `RECORD`, `SCREEN_REMOTE`, `MYAPPS`
 - `get_system_info` / `get_software_info` / `get_service_list`
 - `ssap_request`: send any raw SSAP command (escape hatch)
+
+Every control tool accepts an optional `tv` argument with the name of the target TV. Without it, the command goes to the default TV.
 
 ## Requirements
 
@@ -61,9 +65,29 @@ The first time you connect, the TV shows a **"Connection Request"** prompt on sc
 
 The client key is saved automatically to `~/.lgtv-control-mcp/keys.json` and reused on later connections. You don't need to configure it manually. If you want to pin a specific key, copy the value from that file into `LGTV_CLIENT_KEY`.
 
+## Multiple TVs
+
+You can register any number of TVs by name, without touching config files. Just ask your AI:
+
+- "Add the TV 'Office' with IP 192.168.1.13"
+- "Add the TV 'Living Room' with IP 192.168.1.20"
+- "Which TVs do I have configured?"
+- "Remove the Bedroom TV"
+
+Commands that don't name a TV go to the **default TV**. The first TV you add becomes the default; to change it, say something like "make the Living Room TV the default". To control a specific TV, name it in the request: "pause the Office TV" or "set the volume to 15 on the Living Room TV".
+
+A few details worth knowing:
+
+- Adding a TV with a name that already exists updates it, so "change the Office TV's IP to 192.168.1.40" works without removing it first.
+- Names are matched ignoring case; "office" and "Office" are the same TV.
+- Each TV pairs separately. The first command sent to a new TV shows the connection prompt on that screen; accept it with that TV's remote.
+- The list is stored in `~/.lgtv-control-mcp/tvs.json`, so it survives restarts and is shared by all your MCP clients.
+
+If you only use one TV, you can skip all of this and set `LGTV_HOST` instead: when no TVs are registered, commands go to that address.
+
 ## Client configuration
 
-Set the TV's IP using the `LGTV_HOST` environment variable in your client config.
+`LGTV_HOST` is **optional** in every example below. It gives you a working single-TV setup right away, but you can leave the `env` block out entirely and register your TVs by chat afterwards, for example "Add the TV 'Office' with IP 192.168.1.13" (see [Multiple TVs](#multiple-tvs)). If both exist, registered TVs take precedence over `LGTV_HOST`.
 
 ### Claude Desktop
 
@@ -193,7 +217,7 @@ Most clients that support local MCP via `stdio` use the same pattern:
 
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
-| `LGTV_HOST` | yes | - | TV IP address on the local network |
+| `LGTV_HOST` | no | - | TV IP address; used when no TVs are registered with `add_tv` |
 | `LGTV_PORT` | no | `3001` | `3001` = wss (self-signed TLS); use `3000` for plain ws |
 | `LGTV_CLIENT_KEY` | no | - | Pairing key; obtained and saved automatically on first use |
 
@@ -205,12 +229,16 @@ Once configured, try asking your AI:
 - "Turn up the volume" / "Switch to HDMI 2"
 - "Open Netflix" / "Turn off the TV screen"
 - "Show a 'Dinner's ready' notification on the TV"
+- "Add the TV 'Office' with IP 192.168.1.13"
+- "Open YouTube on the Office TV"
+- "Make the Office TV the default"
 
 ## Troubleshooting
 
 - **"pairing timed out"**: accept the connection prompt on the TV screen and try again.
 - **"could not connect"**: check the IP, that the TV is on and on the same network. Try `LGTV_PORT=3000`.
 - **Backlight not changing**: some firmware versions require the luna path. The server already tries SSAP first and falls back automatically. Also check that your current picture mode allows manual backlight adjustment.
+- **Command reached the wrong TV**: ask "which TVs do I have configured?" to see the registered TVs and the current default, then name the TV in the command or change the default.
 - **Re-pairing**: delete the TV's entry in `~/.lgtv-control-mcp/keys.json` to force a new pairing prompt.
 
 ## How it works

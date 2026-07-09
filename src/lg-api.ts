@@ -32,6 +32,10 @@ export class LgApi {
     return this.setPictureSetting("pictureMode", mode);
   }
 
+  setPeakBrightness(value: string): Promise<unknown> {
+    return this.setPictureSetting("peakBrightness", value);
+  }
+
   volumeUp(): Promise<unknown> {
     return this.client.request("ssap://audio/volumeUp");
   }
@@ -46,10 +50,6 @@ export class LgApi {
 
   getVolume(): Promise<unknown> {
     return this.client.request("ssap://audio/getVolume");
-  }
-
-  getAudioStatus(): Promise<unknown> {
-    return this.client.request("ssap://audio/getStatus");
   }
 
   setMute(mute: boolean): Promise<unknown> {

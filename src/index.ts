@@ -4,26 +4,27 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { LgClient } from "./lg-client.js";
 import { LgApi } from "./lg-api.js";
-import { loadEnvConfig, readStoredKey, storeKey } from "./config.js";
+import { findTv, loadTvs, readStoredKey, requireTv, resolveTv, saveTvs, storeKey } from "./config.js";
 
-let client: LgClient | undefined;
-let api: LgApi | undefined;
+const connections = new Map<string, { client: LgClient; api: LgApi }>();
 
-async function ensureApi(): Promise<LgApi> {
-  if (api && client && client.isConnected) {
-    return api;
+async function ensureApi(tvName?: string): Promise<LgApi> {
+  const tv = await resolveTv(tvName);
+  const poolKey = `${tv.host}:${tv.port}`;
+  const existing = connections.get(poolKey);
+  if (existing?.client.isConnected) {
+    return existing.api;
   }
-  const cfg = loadEnvConfig();
-  const key = cfg.clientKey ?? (await readStoredKey(cfg.host));
-  const connection = new LgClient(cfg.host, cfg.port);
+  existing?.client.disconnect();
+  const key = tv.clientKey ?? (await readStoredKey(tv.host));
+  const connection = new LgClient(tv.host, tv.port);
   const result = await connection.connect(key);
   if (result.clientKey && result.clientKey !== key) {
-    await storeKey(cfg.host, result.clientKey);
-    console.error(`[lgtv-control-mcp] paired with ${cfg.host}; client key saved to ~/.lgtv-control-mcp/keys.json`);
+    await storeKey(tv.host, result.clientKey);
+    console.error(`[lgtv-control-mcp] paired with ${tv.name} (${tv.host}); client key saved to ~/.lgtv-control-mcp/keys.json`);
   }
-  client = connection;
-  api = new LgApi(connection);
-  return api;
+  connections.set(poolKey, { client: connection, api: new LgApi(connection) });
+  return connections.get(poolKey)!.api;
 }
 
 function ok(data: unknown) {
@@ -44,15 +45,111 @@ function tool(
   shape: z.ZodRawShape,
   run: (lg: LgApi, args: any) => Promise<unknown>
 ): void {
-  server.registerTool(name, { description, inputSchema: shape }, async (args: any) => {
+  const inputSchema = {
+    ...shape,
+    tv: z.string().optional().describe("Name of a TV registered with add_tv. Omit to use the default TV.")
+  };
+  server.registerTool(name, { description, inputSchema }, async (args: any) => {
     try {
-      const lg = await ensureApi();
+      const lg = await ensureApi(args.tv);
       return ok(await run(lg, args));
     } catch (err) {
       return fail(err);
     }
   });
 }
+
+function registryTool(
+  name: string,
+  description: string,
+  shape: z.ZodRawShape,
+  run: (args: any) => Promise<unknown>
+): void {
+  server.registerTool(name, { description, inputSchema: shape }, async (args: any) => {
+    try {
+      return ok(await run(args));
+    } catch (err) {
+      return fail(err);
+    }
+  });
+}
+
+registryTool(
+  "add_tv",
+  "Register a named TV or update an existing one (same name overwrites). The first TV added becomes the default.",
+  {
+    name: z.string().describe('TV name, e.g. "Living Room"'),
+    host: z.string().describe("TV IP address on the local network"),
+    port: z.number().int().optional().describe("3001 = wss (default); 3000 = plain ws")
+  },
+  async ({ name, host, port }) => {
+    const registry = await loadTvs();
+    const trimmed = name.trim();
+    const existing = findTv(registry, trimmed);
+    if (existing && existing.name !== trimmed) {
+      delete registry.tvs[existing.name];
+    }
+    registry.tvs[trimmed] = { host: host.trim(), port: port ?? existing?.entry.port ?? 3001 };
+    if (!registry.default || existing?.name === registry.default) {
+      registry.default = trimmed;
+    }
+    await saveTvs(registry);
+    return { ok: true, name: trimmed, ...registry.tvs[trimmed], isDefault: registry.default === trimmed };
+  }
+);
+
+registryTool(
+  "remove_tv",
+  "Remove a TV from the registry.",
+  { name: z.string() },
+  async ({ name }) => {
+    const registry = await loadTvs();
+    const found = requireTv(registry, name);
+    delete registry.tvs[found.name];
+    if (registry.default === found.name) {
+      registry.default = Object.keys(registry.tvs)[0];
+    }
+    await saveTvs(registry);
+    return { ok: true, removed: found.name, default: registry.default ?? null };
+  }
+);
+
+registryTool(
+  "list_tvs",
+  "List registered TVs and which one is the default.",
+  {},
+  async () => {
+    const registry = await loadTvs();
+    const tvs = Object.entries(registry.tvs).map(([name, entry]) => ({
+      name,
+      ...entry,
+      isDefault: name === registry.default
+    }));
+    if (!tvs.length) {
+      const host = process.env.LGTV_HOST?.trim();
+      return {
+        tvs,
+        note: host
+          ? `no TVs registered; commands go to LGTV_HOST (${host})`
+          : "no TVs registered; use add_tv"
+      };
+    }
+    return { tvs };
+  }
+);
+
+registryTool(
+  "set_default_tv",
+  "Set the default TV used when a command does not specify one.",
+  { name: z.string() },
+  async ({ name }) => {
+    const registry = await loadTvs();
+    const found = requireTv(registry, name);
+    registry.default = found.name;
+    await saveTvs(registry);
+    return { ok: true, default: found.name };
+  }
+);
 
 const level = z.number().int().min(0).max(100);
 
@@ -75,6 +172,13 @@ tool(
   "Set the picture mode (e.g. cinema, normal, vivid, game, expert1, expert2, filmMaker, hdrEffect).",
   { mode: z.string() },
   (lg, { mode }) => lg.setPictureMode(mode)
+);
+
+tool(
+  "set_peak_brightness",
+  "Set the peak brightness of the TV to off, low, medium or high.",
+  { value: z.enum(["off", "low", "medium", "high"]) },
+  (lg, { value }) => lg.setPeakBrightness(value)
 );
 
 tool(
