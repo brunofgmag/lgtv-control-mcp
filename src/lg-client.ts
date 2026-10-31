@@ -3,6 +3,38 @@ import WebSocket from "ws";
 const REGISTER_MANIFEST = {
   manifestVersion: 1,
   appVersion: "1.1",
+  signed: {
+    created: "20140509",
+    appId: "com.lge.test",
+    vendorId: "com.lge",
+    localizedAppNames: {
+      "": "LG Remote App",
+      "ko-KR": "리모컨 앱",
+      "zxx-XX": "ЛГ Rэмotэ AПП"
+    },
+    localizedVendorNames: {
+      "": "LG Electronics"
+    },
+    permissions: [
+      "TEST_SECURE",
+      "CONTROL_INPUT_TEXT",
+      "CONTROL_MOUSE_AND_KEYBOARD",
+      "READ_INSTALLED_APPS",
+      "READ_LGE_SDX",
+      "READ_NOTIFICATIONS",
+      "SEARCH",
+      "WRITE_SETTINGS",
+      "WRITE_NOTIFICATION_ALERT",
+      "CONTROL_POWER",
+      "READ_CURRENT_CHANNEL",
+      "READ_RUNNING_APPS",
+      "READ_UPDATE_INFO",
+      "UPDATE_FROM_REMOTE_APP",
+      "READ_LGE_TV_INPUT_EVENTS",
+      "READ_TV_CURRENT_TIME"
+    ],
+    serial: "2f930e2d2cfe083771f68e4fe7bb07"
+  },
   permissions: [
     "LAUNCH",
     "LAUNCH_WEBAPP",
@@ -23,6 +55,7 @@ const REGISTER_MANIFEST = {
     "READ_APP_STATUS",
     "READ_CURRENT_CHANNEL",
     "READ_INPUT_DEVICE_LIST",
+    "READ_INSTALLED_APPS",
     "READ_NETWORK_STATE",
     "READ_RUNNING_APPS",
     "READ_TV_CHANNEL_LIST",
@@ -30,11 +63,18 @@ const REGISTER_MANIFEST = {
     "READ_COUNTRY_INFO",
     "READ_SETTINGS",
     "READ_TV_CURRENT_TIME",
+    "READ_UPDATE_INFO",
     "WRITE_NOTIFICATION_TOAST",
     "WRITE_NOTIFICATION_ALERT",
     "WRITE_SETTINGS",
     "CONTROL_INPUT_TEXT",
     "CONTROL_MOUSE_AND_KEYBOARD"
+  ],
+  signatures: [
+    {
+      signatureVersion: 1,
+      signature: "eyJhbGdvcml0aG0iOiJSU0EtU0hBMjU2Iiwia2V5SWQiOiJ0ZXN0LXNpZ25pbmctY2VydCIsInNpZ25hdHVyZVZlcnNpb24iOjF9.hrVRgjCwXVvE2OOSpDZ58hR+59aFNwYDyjQgKk3auukd7pcegmE2CzPCa0bJ0ZsRAcKkCTJrWo5iDzNhMBWRyaMOv5zWSrthlf7G128qvIlpMT0YNY+n/FaOHE73uLrS/g7swl3/qH/BGFG2Hu4RlL48eb3lLKqTt2xKHdCs6Cd4RMfJPYnzgvI4BNrFUKsjkcu+WD4OO2A27Pq1n50cMchmcaXadJhGrOqH5YmHdOCj5NSHzJYrsW0HPlpuAx/ECMeIZYDh6RMqaFM2DXzdKX9NmmyqzJ3o/0lkk/N97gfVRLW5hA29yeAwaCViZNCP8iC9aO0q9fQojoa7NQnAtw=="
+    }
   ]
 };
 

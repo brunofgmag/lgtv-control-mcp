@@ -37,7 +37,7 @@ function fail(err: unknown) {
   return { content: [{ type: "text" as const, text: `Error: ${message}` }], isError: true };
 }
 
-const server = new McpServer({ name: "lgtv-control-mcp", version: "1.0.0" });
+const server = new McpServer({ name: "lgtv-control-mcp", version: "1.1.1" });
 
 function tool(
   name: string,
