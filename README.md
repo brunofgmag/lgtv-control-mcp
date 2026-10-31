@@ -239,11 +239,12 @@ Once configured, try asking your AI:
 - **"could not connect"**: check the IP, that the TV is on and on the same network. Try `LGTV_PORT=3000`.
 - **Backlight not changing**: some firmware versions require the luna path. The server already tries SSAP first and falls back automatically. Also check that your current picture mode allows manual backlight adjustment.
 - **Command reached the wrong TV**: ask "which TVs do I have configured?" to see the registered TVs and the current default, then name the TV in the command or change the default.
-- **Re-pairing**: delete the TV's entry in `~/.lgtv-control-mcp/keys.json` to force a new pairing prompt.
+- **`401 insufficient permissions` on `list_apps` or `get_software_info`**: update to 1.1.1 or later and restart your MCP client so the server registers again. You don't need to pair again.
+- **Re-pairing**: delete the TV's entry in `~/.lgtv-control-mcp/keys.json` to force a new pairing prompt. If you set `LGTV_CLIENT_KEY`, remove it too, because it takes priority over the file.
 
 ## How it works
 
-The server opens an SSAP WebSocket with the TV, performs the registration handshake (with `pairingType: PROMPT`), and sends `ssap://...` requests. Remote control buttons use a separate pointer socket (`getPointerInputSocket`). Picture adjustments use `setSystemSettings`; when the direct SSAP path is rejected by the firmware, the server uses the luna trick (creating and closing an alert whose `onclose` points to `luna://com.webos.settingsservice/setSystemSettings`).
+The server opens an SSAP WebSocket with the TV, performs the registration handshake (with `pairingType: PROMPT`), and sends `ssap://...` requests. The registration uses LG's public signed manifest, the same one other webOS clients send, because `get_software_info` needs a valid signature on webOS 7. Remote control buttons use a separate pointer socket (`getPointerInputSocket`). Picture adjustments use `setSystemSettings`; when the direct SSAP path is rejected by the firmware, the server uses the luna trick (creating and closing an alert whose `onclose` points to `luna://com.webos.settingsservice/setSystemSettings`).
 
 ## License
 
